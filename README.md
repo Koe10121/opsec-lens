@@ -5,8 +5,6 @@ hostnames, IDs, faces), blurs it in your browser, and is measured on a public be
 
 **Live:** https://opsec-lens.vercel.app (click "Try it" for a synthetic sample)
 
-![Demo](docs/demo.gif)
-
 ## Why
 
 On 7 Nov 2026 I found that a screenshot on my own portfolio showed real public IP addresses belonging
