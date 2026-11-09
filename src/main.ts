@@ -5,6 +5,7 @@ import { emailDetector, phoneDetector, tokenDetector } from './detectors/contact
 import { networkDetector } from './detectors/network';
 import { layoutDetector } from './detectors/layout';
 import { thaiDetectors, hasThai } from './detectors/thai';
+import { detectVisual, type FaceRunner } from './detectors/visual';
 import { apply, STYLES, type Style } from './redact';
 import { createReview, nudgeBox, boxFromPoints } from './review/review';
 import type { Box } from './detectors/types';
@@ -25,6 +26,9 @@ let dragNow: Box | null = null;
 let focusIdx = -1;
 const styleSel = $<HTMLSelectElement>('style');
 for (const s of STYLES) styleSel.add(new Option(s, s));
+
+let faceRunner: Promise<FaceRunner | undefined> | null = null;
+const faces = () => (faceRunner ??= import('./detectors/face-model').then((m) => m.loadFaceRunner()).catch(() => undefined)); // lazy; face check is skipped if the model cannot load
 
 let bitmap: ImageBitmap | null = null;
 let review = createReview([]);
@@ -82,7 +86,11 @@ async function handle(f: File) {
     const thaiBox = $<HTMLInputElement>('thai');
     let words = await recognise(f, { langs: thaiBox.checked ? ['eng', 'tha'] : ['eng'], onProgress });
     if (!thaiBox.checked && hasThai(words)) words = await recognise(f, { langs: ['eng', 'tha'], onProgress }); // Thai data loads only when needed
-    review = createReview(runDetectors(words, [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector, ...thaiDetectors]));
+    const found = runDetectors(words, [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector, ...thaiDetectors]);
+    status.textContent = 'Looking for faces and QR codes…';
+    const px = view.getContext('2d')!.getImageData(0, 0, view.width, view.height);
+    found.push(...(await detectVisual(px, await faces())));
+    review = createReview(found);
     render();
     download.disabled = false;
     undoBtn.disabled = false;

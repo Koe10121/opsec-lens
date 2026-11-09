@@ -29,7 +29,7 @@ export async function recognise(image: Blob | Uint8Array, opts: OcrOptions = { l
     logger: (m) => { if (m.status === 'recognizing text') opts.onProgress?.(m.progress); },
   });
   try {
-    const { data } = await worker.recognize(input, {}, { blocks: true });
+    const { data } = await worker.recognize(input as Blob, {}, { blocks: true });
     const words: Word[] = [];
     for (const b of data.blocks ?? [])
       for (const p of b.paragraphs)
