@@ -58,6 +58,32 @@ describe('thai name (best effort)', () => {
   });
 });
 
+// Tesseract's Thai model often returns one word per glyph; detectors must reassemble them.
+const frags = (text: string, x0: number, y = 10): Word[] =>
+  [...text].map((c, i) => ({ text: c, box: { x: x0 + i * 9, y, w: 7, h: 16 }, conf: 80 }));
+const num = (text: string, x: number): Word => ({ text, box: { x, y: 10, w: 100, h: 16 }, conf: 90 });
+
+describe('thai detectors on glyph-fragmented OCR', () => {
+  it('finds the student id after a fragmented label', () => {
+    const ws = [...frags('รหัสนักศึกษา', 0), num('6401234567', 300)];
+    const f = thaiStudentIdDetector(ws, {});
+    expect(f).toHaveLength(1);
+    expect(f[0].box.x).toBe(300);
+  });
+  it('does not flag a number whose preceding Thai text is not a label', () => {
+    expect(thaiStudentIdDetector([...frags('ชื่อ', 0), num('6401234567', 300)], {})).toEqual([]);
+  });
+  it('finds the name after a fragmented title, excluding the title', () => {
+    const ws = [...frags('นาง', 200), ...frags('ประเสริฐ', 232)];
+    const f = thaiNameDetector(ws, {});
+    expect(f).toHaveLength(1);
+    expect(f[0].box.x).toBe(232);
+  });
+  it('does not join a title to text on another line or far away', () => {
+    expect(thaiNameDetector([...frags('นาง', 0), ...frags('ประเสริฐ', 400)], {})).toEqual([]);
+  });
+});
+
 describe('hasThai', () => {
   it('detects Thai script', () => {
     expect(hasThai(words('hello', 'สวัสดี'))).toBe(true);

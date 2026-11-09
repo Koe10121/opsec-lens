@@ -219,8 +219,37 @@ def ink_box(img, box, thresh=60):
     return {"x": int(x0 + xs.min()), "y": int(y0 + ys.min()), "w": int(xs.max() - xs.min() + 1), "h": int(ys.max() - ys.min() + 1)}
 
 
+THAI_FIRST = ["สมชาย", "สมหญิง", "วิชัย", "สุดา", "ประเสริฐ", "มาลี", "อนันต์", "ปราณี"]
+THAI_LAST = ["ใจดี", "รักษา", "สุขสวัสดิ์", "มั่นคง", "พงษ์ไทย", "แก้วมณี"]
+THAI_TITLES = ["นาย", "นาง", "นางสาว"]
+THAI_FONTS = ["'Leelawadee UI','Tahoma','Noto Sans Thai',sans-serif", "'Tahoma','Leelawadee UI','Noto Sans Thai',sans-serif"]
+
+
+def thai_id(r):
+    d = [r.randint(1, 8)] + [r.randint(0, 9) for _ in range(11)]
+    chk = (11 - sum(x * (13 - i) for i, x in enumerate(d)) % 11) % 10
+    return "".join(map(str, d + [chk]))
+
+
+def thai_doc(r):
+    """Thai form screenshot: labelled rows, one sensitive value each (synthetic, check-digit-valid ID)."""
+    theme = r.choice(list(THEMES))
+    font = r.choice(THAI_FONTS)
+    size = r.choice([18, 20, 22])
+    name = f"{r.choice(THAI_TITLES)} {r.choice(THAI_FIRST)} {r.choice(THAI_LAST)}"
+    rows = [
+        ("ชื่อ", f'<span data-label="thai-name">{name}</span>'),
+        ("เลขบัตร", f'<span data-label="thai-id">{thai_id(r)}</span>'),
+        ("โทรศัพท์", f'<span data-label="thai-phone">0{r.choice("689")}{r.randint(0, 9)}-{r.randint(100, 999)}-{r.randint(1000, 9999)}</span>'),
+        ("รหัสนักศึกษา", f'<span data-label="thai-student-id">{r.randint(60, 69)}{r.randint(10000000, 99999999) % 100000000:08d}</span>'),
+    ]
+    body = "".join(f"<div class=row><label>{k}</label><div class=in>{v}</div></div>" for k, v in rows)
+    return f"<!doctype html><meta charset=utf-8><style>{css(theme, font, size)}label{{width:160px}}</style>{body}"
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--thai", type=int, default=0, help="extra Thai-form images (thai-NNN.png), seeded separately")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--n", type=int, default=300)
     ap.add_argument("--out", default="benchmark/out")
@@ -250,6 +279,22 @@ def main():
                 b["box"] = ink_box(img, b["box"])
             labels[name] = boxes
             meta[name] = info
+        for i in range(a.thai):
+            r = random.Random(f"{a.seed}-thai-{i}")
+            page.set_content(thai_doc(r))
+            boxes = page.evaluate(
+                """() => [...document.querySelectorAll('[data-label]')].map(e => {
+                    const b = e.getBoundingClientRect();
+                    return {type: e.dataset.label, box: {x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height)}};
+                })"""
+            )
+            name = f"thai-{i:03d}.png"
+            page.screenshot(path=str(out / name), full_page=True)
+            img = np.array(Image.open(out / name).convert("RGB"))
+            for b in boxes:
+                b["box"] = ink_box(img, b["box"])
+            labels[name] = boxes
+            meta[name] = {"layout": "thai-form", "mode": "pos"}
         browser.close()
     (out / "labels.json").write_text(json.dumps(labels, indent=1, sort_keys=True) + "\n")
     (out / "meta.json").write_text(json.dumps(meta, indent=1, sort_keys=True) + "\n")

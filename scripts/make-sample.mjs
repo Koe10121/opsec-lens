@@ -1,5 +1,5 @@
 // Generates a synthetic sample screenshot (example.com only). Run: npm run make-sample
-import { createCanvas } from '@napi-rs/canvas';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import { writeFileSync, mkdirSync } from 'node:fs';
 
 const c = createCanvas(640, 190);
@@ -28,3 +28,20 @@ g2.fillText('Authorization: Bearer SYNTHETICtoken0123456789abcdef', 30, 150);
 g2.fillText('commit 3f786850e387550f  2024-05-17', 30, 200);
 writeFileSync('public/sample-contact.png', c2.toBuffer('image/png'));
 console.log('wrote public/sample-contact.png');
+
+// Third sample: Thai form. All values synthetic (valid-checksum fake ID, fake name, fictional numbers).
+// Needs a Thai-capable font; uses Tahoma if present (Windows), else the default font.
+for (const f of ['C:/Windows/Fonts/tahoma.ttf', '/usr/share/fonts/truetype/tlwg/Garuda.ttf']) {
+  try { GlobalFonts.registerFromPath(f, 'ThaiSample'); break; } catch {}
+}
+const thaiId = (d12) => d12 + ((11 - ([...d12].reduce((a, c, i) => a + Number(c) * (13 - i), 0) % 11)) % 10);
+const c3 = createCanvas(760, 260);
+const g3 = c3.getContext('2d');
+g3.fillStyle = '#fff';
+g3.fillRect(0, 0, 760, 260);
+g3.fillStyle = '#000';
+g3.font = '28px ThaiSample, sans-serif';
+const rows = [['ชื่อ', 'นาย สมชาย ใจดี'], ['เลขบัตร', thaiId('110000000001')], ['โทรศัพท์', '081-234-5678'], ['รหัสนักศึกษา', '6401234567']];
+rows.forEach(([k, v], i) => { g3.fillText(k, 30, 50 + i * 55); g3.fillText(v, 280, 50 + i * 55); });
+writeFileSync('public/sample-thai.png', c3.toBuffer('image/png'));
+console.log('wrote public/sample-thai.png');

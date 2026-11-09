@@ -29,7 +29,7 @@ for (const s of STYLES) styleSel.add(new Option(s, s));
 let bitmap: ImageBitmap | null = null;
 let review = createReview([]);
 
-const label = (f: Finding) => `${f.type} (${Math.round(f.confidence * 100)}%)`;
+const label = (f: Finding) => `${f.type} (${Math.round(f.confidence * 100)}%${f.type === 'thai-name' ? ', best effort' : ''})`;
 
 function render() {
   if (!bitmap) return;
@@ -79,8 +79,9 @@ async function handle(f: File) {
     view.getContext('2d')!.drawImage(bitmap, 0, 0);
     view.hidden = false;
     const onProgress = (p: number) => { status.textContent = `Reading text in your browser… ${Math.round(p * 100)}%`; };
-    let words = await recognise(f, { langs: ['eng'], onProgress });
-    if (hasThai(words)) words = await recognise(f, { langs: ['eng', 'tha'], onProgress }); // Thai data loads only when needed
+    const thaiBox = $<HTMLInputElement>('thai');
+    let words = await recognise(f, { langs: thaiBox.checked ? ['eng', 'tha'] : ['eng'], onProgress });
+    if (!thaiBox.checked && hasThai(words)) words = await recognise(f, { langs: ['eng', 'tha'], onProgress }); // Thai data loads only when needed
     review = createReview(runDetectors(words, [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector, ...thaiDetectors]));
     render();
     download.disabled = false;

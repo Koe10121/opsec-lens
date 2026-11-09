@@ -11,3 +11,4 @@ private/
 *.traineddata
 test-results/
 playwright-report/
+benchmark/out-thai/

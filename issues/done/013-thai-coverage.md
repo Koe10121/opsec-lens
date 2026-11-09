@@ -17,6 +17,5 @@ benchmark.
 - Unit tests cover valid/invalid IDs and phone formats; all IDs are synthetic.
 - `npm test` and `npm run typecheck` pass.
 
-## Progress (partial, still open)
-Done: `detectors/thai` (ID with check digit, phone, labelled student ID, best-effort name) with unit tests; wired into the app; Thai OCR is a second pass only when Thai script is seen, with `langPath` `/tessdata`.
-Remaining: add `public/tessdata/tha.traineddata.gz` (self-hosted), a synthetic Thai screenshot (needs a Thai font), Thai benchmark variants, "best effort" label in the review UI.
+## Done
+Self-hosted `public/tessdata/tha.traineddata.gz`, fetched only when the "Thai text" checkbox is ticked (English OCR never emits Thai script, so auto-detection cannot trigger). Detectors reassemble Tesseract's per-glyph Thai fragments. Thai benchmark variants (`--thai N`, 10 images) in `benchmark/results-thai.md`: id 70%, phone 70%, student ID 70%, name 50% (best effort, labelled in the UI). Synthetic `public/sample-thai.png`; e2e `e2e/thai.spec.ts`.

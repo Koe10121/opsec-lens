@@ -2,7 +2,7 @@ import { createWorker } from 'tesseract.js';
 import type { Word } from './detectors/types';
 import { planScale, unscaleWords } from './scale';
 
-export type OcrOptions = { langs: string[]; onProgress?: (fraction: number) => void };
+export type OcrOptions = { langs: string[]; langPath?: string; onProgress?: (fraction: number) => void };
 
 /** Downscale big images before OCR; throws a clear error for absurdly large ones. */
 async function prepare(image: Blob | Uint8Array): Promise<{ input: Blob | Uint8Array; scale: number }> {
@@ -25,7 +25,7 @@ export async function recognise(image: Blob | Uint8Array, opts: OcrOptions = { l
   const { input, scale } = await prepare(image);
   const worker = await createWorker(opts.langs.join('+'), undefined, {
     // Thai data is self-hosted (public/tessdata/tha.traineddata.gz) and only fetched when a Thai page needs it.
-    ...(opts.langs.includes('tha') ? { langPath: '/tessdata' } : {}),
+    ...(opts.langs.includes('tha') ? { langPath: opts.langPath ?? '/tessdata' } : {}),
     logger: (m) => { if (m.status === 'recognizing text') opts.onProgress?.(m.progress); },
   });
   try {
