@@ -36,3 +36,16 @@
 | url | 54 | 1 | 57 | 48.6% | 98.2% | 62.2% |
 
 Note: `column` findings are whole-column boxes with no matching column labels, so they count as false positives in precision. The honest gain from heuristics is the "Fully covered" column.
+
+## VLM spike (issue 017, offline)
+
+Run on a 60-image subset (every 5th non-Thai image), local Ollama, `gemma3:12b` (8.2 GB), RTX 5070 Laptop 8 GB.
+Full per-detector tables: `results-vlm.md`. Reproduce: `npx tsx benchmark/vlm/query.ts` then `npx tsx benchmark/vlm/score.ts`.
+
+| Method (60-image subset) | Recall | Precision | Fully covered |
+|---|---|---|---|
+| rules + heuristics | 70.5% | 63.5% | 80.7% |
+| model-only (gemma3:12b) | 57.0% | 64.1% | 59.0% |
+| combined (heuristics + model) | 73.8% | 36.9% | 82.0% |
+
+Median 8.4 s per image. Decision: do not ship (see `issues/done/017-vlm-spike-offline.md`).
