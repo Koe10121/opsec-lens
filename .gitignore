@@ -9,3 +9,5 @@ models/*.bin
 benchmark/out/
 private/
 *.traineddata
+test-results/
+playwright-report/

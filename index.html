@@ -13,6 +13,7 @@
     #review { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
     #findings { list-style: none; padding: 0; margin: 1rem 0 0; min-width: 220px; }
     #findings li { padding: .25rem 0; }
+    canvas:focus-visible, input:focus-visible, button:focus-visible, #drop:focus-visible { outline: 3px solid #05c; outline-offset: 2px; }
     #findings label { cursor: pointer; }
   </style>
 </head>
@@ -24,10 +25,11 @@
   <div id="status" role="status"></div>
   <button id="undo" disabled>Undo</button>
   <button id="redo" disabled>Redo</button>
+  <button id="add" disabled>Add box</button>
   <label>Style <select id="style"></select></label>
   <button id="download" disabled>Download redacted PNG</button>
   <div id="review">
-    <canvas id="view" hidden></canvas>
+    <canvas id="view" hidden tabindex="0" role="img" aria-label="Screenshot. Press Enter to add a box by keyboard, or drag with the mouse."></canvas>
     <ul id="findings" aria-label="Findings"></ul>
   </div>
   <script type="module" src="/src/main.ts"></script>

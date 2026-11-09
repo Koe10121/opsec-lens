@@ -8,6 +8,7 @@
     "build": "vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
     "make-sample": "node scripts/make-sample.mjs",
     "time-ocr": "node scripts/time-ocr.mjs",
     "benchmark:generate": "python benchmark/generate --seed 1 --n 300",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@napi-rs/canvas": "^1.1.0",
+    "@playwright/test": "^1.65.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
