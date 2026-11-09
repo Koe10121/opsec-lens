@@ -45,3 +45,14 @@ const rows = [['ชื่อ', 'นาย สมชาย ใจดี'], ['เ�
 rows.forEach(([k, v], i) => { g3.fillText(k, 30, 50 + i * 55); g3.fillText(v, 280, 50 + i * 55); });
 writeFileSync('public/sample-thai.png', c3.toBuffer('image/png'));
 console.log('wrote public/sample-thai.png');
+
+// Clean sample: nothing sensitive, used to test the "no findings" message
+const cClean = createCanvas(640, 120);
+const gClean = cClean.getContext('2d');
+gClean.fillStyle = '#fff';
+gClean.fillRect(0, 0, 640, 120);
+gClean.fillStyle = '#000';
+gClean.font = '28px sans-serif';
+gClean.fillText('Build finished successfully', 30, 70);
+writeFileSync('public/sample-clean.png', cClean.toBuffer('image/png'));
+console.log('wrote public/sample-clean.png');

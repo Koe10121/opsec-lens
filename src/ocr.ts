@@ -24,8 +24,11 @@ async function prepare(image: Blob | Uint8Array): Promise<{ input: Blob | Uint8A
 export async function recognise(image: Blob | Uint8Array, opts: OcrOptions = { langs: ['eng'] }): Promise<Word[]> {
   const { input, scale } = await prepare(image);
   const worker = await createWorker(opts.langs.join('+'), undefined, {
-    // Thai data is self-hosted (public/tessdata/tha.traineddata.gz) and only fetched when a Thai page needs it.
-    ...(opts.langs.includes('tha') ? { langPath: opts.langPath ?? '/tessdata' } : {}),
+    // In the browser everything is served from our own origin: worker + core (public/tesseract, copied at build),
+    // language data (public/tessdata). Thai data is only fetched when a Thai page needs it. Node (benchmark) keeps defaults.
+    ...(typeof window !== 'undefined'
+      ? { workerPath: '/tesseract/worker.min.js', corePath: '/tesseract', langPath: opts.langPath ?? '/tessdata' }
+      : opts.langs.includes('tha') ? { langPath: opts.langPath ?? '/tessdata' } : {}),
     logger: (m) => { if (m.status === 'recognizing text') opts.onProgress?.(m.progress); },
   });
   try {

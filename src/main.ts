@@ -71,7 +71,10 @@ function render() {
   );
   if (focusIdx >= 0) list.querySelector<HTMLInputElement>(`input[data-i="${focusIdx}"]`)?.focus();
   const n = review.accepted().length;
-  if (!draft) status.textContent = `${review.items().length} finding(s), ${n} will be redacted.`;
+  if (!draft)
+    status.textContent = review.items().length
+      ? `${review.items().length} finding(s), ${n} will be redacted.`
+      : 'No sensitive items found. Detection is not a guarantee, so check the image yourself or add a box by hand.';
 }
 
 async function handle(f: File) {
@@ -102,10 +105,14 @@ async function handle(f: File) {
     redoBtn.disabled = false;
     addBtn.disabled = false;
   } catch (e) {
-    status.textContent = `Could not process image: ${(e as Error).message}`;
+    status.textContent = `Could not read this image or run text detection. Try a different PNG screenshot. (${(e as Error).message})`;
   }
 }
 
+$('try').addEventListener('click', async () => {
+  const r = await fetch('/sample-email.png'); // synthetic sample shipped with the app
+  handle(new File([await r.blob()], 'sample-email.png', { type: 'image/png' }));
+});
 file.addEventListener('change', () => file.files?.[0] && handle(file.files[0]));
 drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));

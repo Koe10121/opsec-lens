@@ -13,3 +13,4 @@ test-results/
 playwright-report/
 benchmark/out-thai/
 public/data/
+public/tesseract/
