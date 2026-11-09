@@ -60,20 +60,93 @@ export function aggregate(results: PerType[]): Aggregate {
   return out;
 }
 
-const pct = (v: number | null) => (v === null ? 'n/a' : `${(v * 100).toFixed(1)}%`);
+export const COVERED_THRESHOLD = 0.95;
 
-export function renderResults(a: Aggregate, images: number): string {
-  const rows = Object.keys(a)
-    .sort()
-    .map((t) => `| ${t} | ${a[t].tp} | ${a[t].fp} | ${a[t].fn} | ${pct(a[t].recall)} | ${pct(a[t].precision)} |`);
+export type Cover = { covered: number; total: number };
+export type CoverAggregate = Record<string, Cover & { rate: number | null }>;
+
+/**
+ * "Fully covered": a label counts when the union of ALL findings (any type) hides at least 95% of its
+ * area. This is what matters to the person sharing the screenshot, however the boxes were split or typed.
+ */
+export function coverImage(labels: Label[], findings: Finding[]): Record<string, Cover> {
+  const out: Record<string, Cover> = {};
+  for (const lb of labels) {
+    const c = (out[lb.type] ??= { covered: 0, total: 0 });
+    c.total++;
+    const { x, y, w, h } = lb.box;
+    let hit = 0;
+    for (let px = x; px < x + w; px++)
+      for (let py = y; py < y + h; py++)
+        if (findings.some((f) => px >= f.box.x && px < f.box.x + f.box.w && py >= f.box.y && py < f.box.y + f.box.h))
+          hit++;
+    if (w * h > 0 && hit / (w * h) >= COVERED_THRESHOLD) c.covered++;
+  }
+  return out;
+}
+
+export function aggregateCoverage(results: Record<string, Cover>[]): CoverAggregate {
+  const sum: Record<string, Cover> = {};
+  for (const r of results)
+    for (const [t, v] of Object.entries(r)) {
+      const s = (sum[t] ??= { covered: 0, total: 0 });
+      s.covered += v.covered;
+      s.total += v.total;
+    }
+  const out: CoverAggregate = {};
+  for (const [t, s] of Object.entries(sum)) out[t] = { ...s, rate: s.total ? s.covered / s.total : null };
+  return out;
+}
+
+export type MethodResult = { name: string; perType: Aggregate; coverage: CoverAggregate };
+
+const pct = (v: number | null) => (v === null ? 'n/a' : `${(v * 100).toFixed(1)}%`);
+const ratio = (n: number, d: number) => (d ? n / d : null);
+
+export function renderReport(opts: {
+  images: number;
+  negatives: { images: number; withFalsePositive: number };
+  methods: MethodResult[];
+}): string {
+  const summary = opts.methods.map((m) => {
+    const v = Object.values(m.perType);
+    const tp = v.reduce((a, c) => a + c.tp, 0);
+    const fp = v.reduce((a, c) => a + c.fp, 0);
+    const fn = v.reduce((a, c) => a + c.fn, 0);
+    const cv = Object.values(m.coverage);
+    const covered = cv.reduce((a, c) => a + c.covered, 0);
+    const total = cv.reduce((a, c) => a + c.total, 0);
+    return `| ${m.name} | ${pct(ratio(tp, tp + fn))} | ${pct(ratio(tp, tp + fp))} | ${pct(ratio(covered, total))} |`;
+  });
+  const sections = opts.methods.flatMap((m) => {
+    const rows = Object.keys({ ...m.perType, ...m.coverage })
+      .sort()
+      .map((t) => {
+        const a = m.perType[t] ?? { tp: 0, fp: 0, fn: 0, recall: null, precision: null };
+        return `| ${t} | ${a.tp} | ${a.fp} | ${a.fn} | ${pct(a.recall)} | ${pct(a.precision)} | ${pct(m.coverage[t]?.rate ?? null)} |`;
+      });
+    return [
+      `## Method: ${m.name}`,
+      '',
+      '| Detector | TP | FP | FN | Recall | Precision | Fully covered |',
+      '|---|---|---|---|---|---|---|',
+      ...rows,
+      '',
+    ];
+  });
   return [
     '# Benchmark results',
     '',
-    `Method: rules-only. ${images} images, synthetic data, IoU >= ${IOU_THRESHOLD}, same type.`,
+    `${opts.images} images, synthetic data, IoU >= ${IOU_THRESHOLD}, same type. ` +
+      `"Fully covered" = at least ${COVERED_THRESHOLD * 100}% of a labelled item is hidden by the union of findings.`,
+    `${opts.negatives.images} negative images, ${opts.negatives.withFalsePositive} with at least one false positive (all false positives count against precision).`,
     '',
-    '| Detector | TP | FP | FN | Recall | Precision |',
-    '|---|---|---|---|---|---|',
-    ...rows,
+    '## Summary',
     '',
+    '| Method | Recall | Precision | Fully covered |',
+    '|---|---|---|---|',
+    ...summary,
+    '',
+    ...sections,
   ].join('\n');
 }
