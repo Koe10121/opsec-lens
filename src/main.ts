@@ -10,6 +10,7 @@ import { detectVisual, type FaceRunner } from './detectors/visual';
 import { apply, STYLES, type Style } from './redact';
 import { createReview, nudgeBox, boxFromPoints } from './review/review';
 import type { Box } from './detectors/types';
+import { describe, CATEGORY_COLOR, CATEGORY_NAME, type Category } from './ui/labels';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const drop = $('drop');
@@ -21,6 +22,11 @@ const undoBtn = $<HTMLButtonElement>('undo');
 const redoBtn = $<HTMLButtonElement>('redo');
 const list = $('findings');
 const addBtn = $<HTMLButtonElement>('add');
+const workspace = $('workspace');
+const summary = $('summary');
+let hoverIdx = -1;
+const legend = $('legend');
+legend.replaceChildren(...(Object.keys(CATEGORY_NAME) as Category[]).filter((c) => c !== 'manual').map((c) => { const li = document.createElement('li'); li.style.setProperty('--c', CATEGORY_COLOR[c]); li.innerHTML = `<i></i>${CATEGORY_NAME[c]}`; return li; }));
 let draft: Box | null = null; // box being placed by keyboard
 let drag: { x: number; y: number } | null = null; // mouse drag start, image coords
 let dragNow: Box | null = null;
@@ -43,20 +49,55 @@ function render() {
   if (!bitmap) return;
   const ctx = view.getContext('2d')!;
   ctx.drawImage(bitmap, 0, 0);
-  ctx.strokeStyle = 'red';
-  ctx.lineWidth = 3;
-  for (const { box } of review.accepted()) ctx.strokeRect(box.x, box.y, box.w, box.h);
+  const items = review.items();
+  const unit = Math.max(1, view.width / 900); // keep strokes and tags readable on big screenshots
+  items.forEach((item, i) => {
+    const { box } = item.finding;
+    const d = describe(item.finding);
+    ctx.save();
+    if (item.accepted) {
+      ctx.fillStyle = d.color + (i === hoverIdx ? '66' : '33');
+      ctx.fillRect(box.x, box.y, box.w, box.h);
+      ctx.strokeStyle = d.color;
+      ctx.lineWidth = (i === hoverIdx ? 4 : 2.5) * unit;
+      ctx.strokeRect(box.x, box.y, box.w, box.h);
+      const size = Math.round(13 * unit);
+      ctx.font = `700 ${size}px system-ui, sans-serif`;
+      const t = String(i + 1);
+      const tw = ctx.measureText(t).width + 8 * unit;
+      const th = size + 4 * unit;
+      const ty = box.y - th >= 0 ? box.y - th : box.y;
+      ctx.fillStyle = d.color;
+      ctx.fillRect(box.x, ty, tw, th);
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(t, box.x + 4 * unit, ty + th / 2);
+    } else {
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.5 * unit;
+      ctx.setLineDash([6 * unit, 4 * unit]);
+      ctx.strokeRect(box.x, box.y, box.w, box.h);
+    }
+    ctx.restore();
+  });
   const pending = draft ?? dragNow;
   if (pending) {
     ctx.save();
-    ctx.strokeStyle = 'blue';
-    ctx.setLineDash([8, 6]);
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 2.5 * unit;
+    ctx.setLineDash([8 * unit, 6 * unit]);
     ctx.strokeRect(pending.x, pending.y, pending.w, pending.h);
     ctx.restore();
   }
   list.replaceChildren(
-    ...review.items().map((item, i) => {
+    ...items.map((item, i) => {
+      const d = describe(item.finding);
       const li = document.createElement('li');
+      li.style.setProperty('--c', d.color);
+      li.classList.toggle('off', !item.accepted);
+      li.classList.toggle('hover', i === hoverIdx);
+      li.addEventListener('mouseenter', () => { hoverIdx = i; render(); });
+      li.addEventListener('mouseleave', () => { hoverIdx = -1; render(); });
       const lab = document.createElement('label');
       const cb = document.createElement('input');
       cb.type = 'checkbox';
@@ -64,21 +105,41 @@ function render() {
       cb.dataset.i = String(i);
       cb.setAttribute('aria-label', `${label(item.finding)}, ${item.finding.source === 'manual' ? 'drawn by hand' : 'detected'}, ${item.accepted ? 'will be redacted' : 'not redacted'}`);
       cb.addEventListener('change', () => { review.toggle(i); focusIdx = i; render(); });
-      lab.append(cb, ` ${label(item.finding)}`);
+      const num = document.createElement('span');
+      num.className = 'num';
+      num.textContent = String(i + 1);
+      const meta = document.createElement('span');
+      meta.className = 'meta';
+      const name = document.createElement('span');
+      name.className = 'name';
+      const f = item.finding;
+      name.textContent = d.name;
+      const conf = document.createElement('span');
+      conf.className = 'conf';
+      conf.textContent = f.source === 'manual' ? 'by hand' : `${Math.round(f.confidence * 100)}% sure${f.type === 'thai-name' ? ', best effort' : ''}`;
+      name.append(conf);
+      const why = document.createElement('span');
+      why.className = 'why';
+      why.textContent = f.org ? `Belongs to ${f.org}. ${d.why}` : d.why;
+      meta.append(name, why);
+      lab.append(cb, num, meta);
       li.append(lab);
       return li;
     }),
   );
+  if (!items.length) list.innerHTML = '<li class="empty">Nothing found.</li>';
   if (focusIdx >= 0) list.querySelector<HTMLInputElement>(`input[data-i="${focusIdx}"]`)?.focus();
   const n = review.accepted().length;
+  summary.textContent = items.length ? `${items.length} found, ${n} will be covered. Untick any you want to keep.` : '';
   if (!draft)
-    status.textContent = review.items().length
-      ? `${review.items().length} finding(s), ${n} will be redacted.`
+    status.textContent = items.length
+      ? `${items.length} finding(s), ${n} will be redacted.`
       : 'No sensitive items found. Detection is not a guarantee, so check the image yourself or add a box by hand.';
 }
 
 async function handle(f: File) {
   download.disabled = true;
+  status.classList.add('busy');
   status.textContent = 'Reading text in your browser…';
   try {
     const bm = await createImageBitmap(f);
@@ -89,6 +150,9 @@ async function handle(f: File) {
     view.height = bitmap.height;
     view.getContext('2d')!.drawImage(bitmap, 0, 0);
     view.hidden = false;
+    workspace.hidden = false;
+    list.replaceChildren();
+    summary.textContent = '';
     const onProgress = (p: number) => { status.textContent = `Reading text in your browser… ${Math.round(p * 100)}%`; };
     const thaiBox = $<HTMLInputElement>('thai');
     let words = await recognise(f, { langs: thaiBox.checked ? ['eng', 'tha'] : ['eng'], onProgress });
@@ -106,6 +170,8 @@ async function handle(f: File) {
     addBtn.disabled = false;
   } catch (e) {
     status.textContent = `Could not read this image or run text detection. Try a different PNG screenshot. (${(e as Error).message})`;
+  } finally {
+    status.classList.remove('busy');
   }
 }
 
@@ -190,3 +256,5 @@ window.addEventListener('keydown', (e) => {
   if (k === 'z' && !e.shiftKey) { e.preventDefault(); review.undo(); render(); }
   else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); review.redo(); render(); }
 });
+
+drop.addEventListener('keydown', (e) => { if (e.target === drop && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); file.click(); } });
