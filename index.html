@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpSec Lens</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    #drop { border: 2px dashed #888; padding: 2rem; text-align: center; border-radius: 8px; }
+    #drop.over { background: #eef; }
+    canvas { max-width: 100%; margin-top: 1rem; border: 1px solid #ccc; }
+    #status { margin: .5rem 0; color: #444; }
+  </style>
+</head>
+<body>
+  <h1>OpSec Lens</h1>
+  <p>Images never leave your browser. Detection is not a guarantee: review before sharing.</p>
+  <div id="drop" tabindex="0">Drop a PNG here or <input id="file" type="file" accept="image/png" /></div>
+  <div id="status" role="status"></div>
+  <button id="download" disabled>Download redacted PNG</button>
+  <br /><canvas id="view" hidden></canvas>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
