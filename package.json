@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build-ip-orgs": "tsx scripts/build-ip-orgs.ts",
+    "prebuild": "tsx scripts/build-ip-orgs.ts",
     "build": "vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

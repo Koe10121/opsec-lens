@@ -1,4 +1,5 @@
 import type { Detector } from './types';
+import { lookupOrg, type OrgTable } from './orgs';
 
 const IPV4 = /(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d]|\.\d)/;
 const VERSION_PREFIX = /(?:^|[^A-Za-z0-9])v$|==$/i;
@@ -9,7 +10,7 @@ function isDocRange(o: number[]): boolean {
   return (a === 192 && b === 0 && c === 2) || (a === 198 && b === 51 && c === 100) || (a === 203 && b === 0 && c === 113);
 }
 
-export const ipv4Detector: Detector = (words) =>
+export const ipv4Detector: Detector = (words, ctx) =>
   words.flatMap((w, i) => {
     const m = IPV4.exec(w.text);
     if (!m) return [];
@@ -18,6 +19,8 @@ export const ipv4Detector: Detector = (words) =>
     if (VERSION_PREFIX.test(w.text.slice(0, m.index))) return [];
     if (i > 0 && VERSION_WORD.test(words[i - 1].text)) return [];
     if (isPrivate(octets)) return [{ type: 'internal-ip', box: w.box, confidence: 0.95, source: 'rules' as const }];
+    const org = (ctx.orgs as OrgTable | undefined) && lookupOrg(ctx.orgs as OrgTable, octets.join('.'));
+    if (org) return [{ type: 'ip', box: w.box, confidence: 0.97, source: 'rules' as const, org }];
     return [{ type: 'ip', box: w.box, confidence: isDocRange(octets) ? 0.5 : 0.9, source: 'rules' as const }];
   });
 

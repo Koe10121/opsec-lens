@@ -5,6 +5,8 @@ export type Finding = {
   box: Box;
   confidence: number;
   source: 'rules' | 'layout' | 'model' | 'manual';
+  /** Organisation that owns the matched public IP, when known. */
+  org?: string;
 };
 export type Context = Record<string, unknown>;
 export type Detector = (words: Word[], ctx: Context) => Finding[];

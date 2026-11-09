@@ -3,6 +3,7 @@ import { planScale } from './scale';
 import { runDetectors, type Finding } from './detectors/types';
 import { emailDetector, phoneDetector, tokenDetector } from './detectors/contact';
 import { networkDetector } from './detectors/network';
+import type { OrgTable } from './detectors/orgs';
 import { layoutDetector } from './detectors/layout';
 import { thaiDetectors, hasThai } from './detectors/thai';
 import { detectVisual, type FaceRunner } from './detectors/visual';
@@ -30,10 +31,13 @@ for (const s of STYLES) styleSel.add(new Option(s, s));
 let faceRunner: Promise<FaceRunner | undefined> | null = null;
 const faces = () => (faceRunner ??= import('./detectors/face-model').then((m) => m.loadFaceRunner()).catch(() => undefined)); // lazy; face check is skipped if the model cannot load
 
+let orgTable: Promise<OrgTable | undefined> | null = null;
+const orgs = () => (orgTable ??= fetch('/data/ip-orgs.json').then((r) => (r.ok ? (r.json() as Promise<OrgTable>) : undefined)).catch(() => undefined)); // lazy, same-origin; labels are skipped if unavailable
+
 let bitmap: ImageBitmap | null = null;
 let review = createReview([]);
 
-const label = (f: Finding) => `${f.type} (${Math.round(f.confidence * 100)}%${f.type === 'thai-name' ? ', best effort' : ''})`;
+const label = (f: Finding) => `${f.type} (${Math.round(f.confidence * 100)}%${f.type === 'thai-name' ? ', best effort' : ''})${f.org ? `, belongs to ${f.org}` : ''}`;
 
 function render() {
   if (!bitmap) return;
@@ -86,7 +90,8 @@ async function handle(f: File) {
     const thaiBox = $<HTMLInputElement>('thai');
     let words = await recognise(f, { langs: thaiBox.checked ? ['eng', 'tha'] : ['eng'], onProgress });
     if (!thaiBox.checked && hasThai(words)) words = await recognise(f, { langs: ['eng', 'tha'], onProgress }); // Thai data loads only when needed
-    const found = runDetectors(words, [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector, ...thaiDetectors]);
+    const hasIp = words.some((w) => /\d{1,3}(\.\d{1,3}){3}/.test(w.text));
+    const found = runDetectors(words, [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector, ...thaiDetectors], { orgs: hasIp ? await orgs() : undefined });
     status.textContent = 'Looking for faces and QR codes…';
     const px = view.getContext('2d')!.getImageData(0, 0, view.width, view.height);
     found.push(...(await detectVisual(px, await faces())));

@@ -12,3 +12,4 @@ private/
 test-results/
 playwright-report/
 benchmark/out-thai/
+public/data/
