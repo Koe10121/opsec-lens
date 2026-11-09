@@ -3,7 +3,7 @@
 Finds what makes a screenshot unsafe to share, even when it isn't a password (an organisation's IPs,
 hostnames, IDs, faces), blurs it in your browser, and is measured on a public benchmark.
 
-**Live:** `<LIVE_URL>` (click "Try it" for a synthetic sample)
+**Live:** https://opsec-lens.vercel.app (click "Try it" for a synthetic sample)
 
 ![Demo](docs/demo.gif)
 
