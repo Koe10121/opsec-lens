@@ -2,14 +2,15 @@
 import { createCanvas } from '@napi-rs/canvas';
 import { writeFileSync, mkdirSync } from 'node:fs';
 
-const c = createCanvas(640, 160);
+const c = createCanvas(640, 190);
 const g = c.getContext('2d');
 g.fillStyle = '#fff';
-g.fillRect(0, 0, 640, 160);
+g.fillRect(0, 0, 640, 190);
 g.fillStyle = '#000';
 g.font = '28px sans-serif';
 g.fillText('Support ticket #1042', 30, 50);
 g.fillText('Contact: user@example.com', 30, 100);
+g.fillText('Server: 203.0.113.7  (v1.2.3.4)', 30, 140);
 mkdirSync('public', { recursive: true });
 writeFileSync('public/sample-email.png', c.toBuffer('image/png'));
 console.log('wrote public/sample-email.png');

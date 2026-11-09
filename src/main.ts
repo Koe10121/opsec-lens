@@ -1,6 +1,7 @@
 import { recognise } from './ocr';
 import { runDetectors, type Finding } from './detectors/types';
 import { emailDetector } from './detectors/contact';
+import { ipv4Detector } from './detectors/network';
 import { apply } from './redact';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -23,7 +24,7 @@ async function handle(f: File) {
     const ctx = view.getContext('2d')!;
     ctx.drawImage(bitmap, 0, 0);
     view.hidden = false;
-    findings = runDetectors(await recognise(f), [emailDetector]);
+    findings = runDetectors(await recognise(f), [emailDetector, ipv4Detector]);
     ctx.strokeStyle = 'red';
     ctx.lineWidth = 3;
     for (const { box } of findings) ctx.strokeRect(box.x, box.y, box.w, box.h);
