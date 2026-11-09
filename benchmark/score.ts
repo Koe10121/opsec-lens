@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { recognise } from '../src/ocr';
 import { runDetectors } from '../src/detectors/types';
-import { emailDetector } from '../src/detectors/contact';
+import { emailDetector, phoneDetector, tokenDetector } from '../src/detectors/contact';
 import { networkDetector } from '../src/detectors/network';
 import { aggregate, renderResults, scoreImage, type Label } from './metrics';
 
@@ -13,7 +13,7 @@ const labels: Record<string, Label[]> = JSON.parse(readFileSync(join(dir, 'label
 const results = [];
 for (const name of Object.keys(labels).sort()) {
   const words = await recognise(readFileSync(join(dir, name)));
-  const findings = runDetectors(words, [emailDetector, networkDetector]);
+  const findings = runDetectors(words, [emailDetector, phoneDetector, tokenDetector, networkDetector]);
   results.push(scoreImage(labels[name], findings));
   console.log(`${name}: ${findings.length} findings, ${labels[name].length} labels`);
 }

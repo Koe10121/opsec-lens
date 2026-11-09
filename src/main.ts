@@ -1,6 +1,6 @@
 import { recognise } from './ocr';
 import { runDetectors, type Finding } from './detectors/types';
-import { emailDetector } from './detectors/contact';
+import { emailDetector, phoneDetector, tokenDetector } from './detectors/contact';
 import { networkDetector } from './detectors/network';
 import { apply } from './redact';
 import { createReview } from './review/review';
@@ -53,7 +53,7 @@ async function handle(f: File) {
     view.height = bitmap.height;
     view.getContext('2d')!.drawImage(bitmap, 0, 0);
     view.hidden = false;
-    review = createReview(runDetectors(await recognise(f), [emailDetector, networkDetector]));
+    review = createReview(runDetectors(await recognise(f), [emailDetector, phoneDetector, tokenDetector, networkDetector]));
     render();
     download.disabled = false;
     undoBtn.disabled = false;
