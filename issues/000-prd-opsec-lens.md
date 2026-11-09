@@ -173,7 +173,7 @@ slice.
 - Any server-side processing, paid APIs, or sending image data or extracted text over the network.
 - A guarantee of complete detection; the tool assists review and does not certify safety.
 - Shipping a browser VLM in v1 (offline experiment only unless it clearly beats heuristics).
-- Licence plate detection if no good small model exists.
+- Licence plate detection: dropped from v1 (issue 016). No small model with a clear weights licence; plates can be boxed by hand on the review screen.
 - Slice 1 itself excludes: review screen, Thai, IP-to-organisation, column layout, faces/QR/plates,
   benchmark, video.
 
