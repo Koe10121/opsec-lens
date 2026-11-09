@@ -45,7 +45,7 @@ let review = createReview([]);
 
 const label = (f: Finding) => `${f.type} (${Math.round(f.confidence * 100)}%${f.type === 'thai-name' ? ', best effort' : ''})${f.org ? `, belongs to ${f.org}` : ''}`;
 
-function render() {
+function drawCanvas() {
   if (!bitmap) return;
   const ctx = view.getContext('2d')!;
   ctx.drawImage(bitmap, 0, 0);
@@ -89,6 +89,12 @@ function render() {
     ctx.strokeRect(pending.x, pending.y, pending.w, pending.h);
     ctx.restore();
   }
+}
+
+function render() {
+  if (!bitmap) return;
+  drawCanvas();
+  const items = review.items();
   list.replaceChildren(
     ...items.map((item, i) => {
       const d = describe(item.finding);
@@ -96,8 +102,9 @@ function render() {
       li.style.setProperty('--c', d.color);
       li.classList.toggle('off', !item.accepted);
       li.classList.toggle('hover', i === hoverIdx);
-      li.addEventListener('mouseenter', () => { hoverIdx = i; render(); });
-      li.addEventListener('mouseleave', () => { hoverIdx = -1; render(); });
+      // Hover only repaints the canvas: rebuilding the list would destroy the card under the pointer.
+      li.addEventListener('mouseenter', () => { hoverIdx = i; li.classList.add('hover'); drawCanvas(); });
+      li.addEventListener('mouseleave', () => { hoverIdx = -1; li.classList.remove('hover'); drawCanvas(); });
       const lab = document.createElement('label');
       const cb = document.createElement('input');
       cb.type = 'checkbox';
