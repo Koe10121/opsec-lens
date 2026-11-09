@@ -16,3 +16,7 @@ benchmark.
 - Thai variants are in the benchmark with per-category results; names are reported as best effort.
 - Unit tests cover valid/invalid IDs and phone formats; all IDs are synthetic.
 - `npm test` and `npm run typecheck` pass.
+
+## Progress (partial, still open)
+Done: `detectors/thai` (ID with check digit, phone, labelled student ID, best-effort name) with unit tests; wired into the app; Thai OCR is a second pass only when Thai script is seen, with `langPath` `/tessdata`.
+Remaining: add `public/tessdata/tha.traineddata.gz` (self-hosted), a synthetic Thai screenshot (needs a Thai font), Thai benchmark variants, "best effort" label in the review UI.

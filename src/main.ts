@@ -4,6 +4,7 @@ import { runDetectors, type Finding } from './detectors/types';
 import { emailDetector, phoneDetector, tokenDetector } from './detectors/contact';
 import { networkDetector } from './detectors/network';
 import { layoutDetector } from './detectors/layout';
+import { thaiDetectors, hasThai } from './detectors/thai';
 import { apply, STYLES, type Style } from './redact';
 import { createReview, nudgeBox, boxFromPoints } from './review/review';
 import type { Box } from './detectors/types';
@@ -77,7 +78,10 @@ async function handle(f: File) {
     view.height = bitmap.height;
     view.getContext('2d')!.drawImage(bitmap, 0, 0);
     view.hidden = false;
-    review = createReview(runDetectors(await recognise(f, { langs: ['eng'], onProgress: (p) => { status.textContent = `Reading text in your browser… ${Math.round(p * 100)}%`; } }), [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector]));
+    const onProgress = (p: number) => { status.textContent = `Reading text in your browser… ${Math.round(p * 100)}%`; };
+    let words = await recognise(f, { langs: ['eng'], onProgress });
+    if (hasThai(words)) words = await recognise(f, { langs: ['eng', 'tha'], onProgress }); // Thai data loads only when needed
+    review = createReview(runDetectors(words, [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector, ...thaiDetectors]));
     render();
     download.disabled = false;
     undoBtn.disabled = false;
