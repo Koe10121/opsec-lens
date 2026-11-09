@@ -7,6 +7,7 @@ import { recognise } from '../src/ocr';
 import { runDetectors, type Detector } from '../src/detectors/types';
 import { emailDetector, phoneDetector, tokenDetector } from '../src/detectors/contact';
 import { networkDetector } from '../src/detectors/network';
+import { layoutDetector } from '../src/detectors/layout';
 import {
   aggregate,
   aggregateCoverage,
@@ -19,6 +20,7 @@ import {
 
 const METHODS: { name: string; detectors: Detector[] }[] = [
   { name: 'rules-only', detectors: [emailDetector, phoneDetector, tokenDetector, networkDetector] },
+  { name: 'rules + heuristics', detectors: [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector] },
 ];
 
 const dir = process.argv[2] ?? 'benchmark/out';
@@ -47,5 +49,9 @@ const md = renderReport({
   negatives: { images: negatives.length, withFalsePositive: per[0].negFp },
   methods,
 });
-writeFileSync(join(dir, 'results.md'), md);
+const note =
+  '
+Note: `column` findings are whole-column boxes with no matching column labels, so they count as false positives in precision. The honest gain from heuristics is the "Fully covered" column.
+';
+writeFileSync(join(dir, 'results.md'), md + note);
 console.log(md);

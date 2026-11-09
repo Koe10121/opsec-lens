@@ -2,6 +2,7 @@ import { recognise } from './ocr';
 import { runDetectors, type Finding } from './detectors/types';
 import { emailDetector, phoneDetector, tokenDetector } from './detectors/contact';
 import { networkDetector } from './detectors/network';
+import { layoutDetector } from './detectors/layout';
 import { apply, STYLES, type Style } from './redact';
 import { createReview } from './review/review';
 
@@ -55,7 +56,7 @@ async function handle(f: File) {
     view.height = bitmap.height;
     view.getContext('2d')!.drawImage(bitmap, 0, 0);
     view.hidden = false;
-    review = createReview(runDetectors(await recognise(f), [emailDetector, phoneDetector, tokenDetector, networkDetector]));
+    review = createReview(runDetectors(await recognise(f), [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector]));
     render();
     download.disabled = false;
     undoBtn.disabled = false;
