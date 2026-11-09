@@ -9,6 +9,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "make-sample": "node scripts/make-sample.mjs",
+    "time-ocr": "node scripts/time-ocr.mjs",
     "benchmark:generate": "python benchmark/generate --seed 1 --n 300",
     "benchmark:score": "tsx benchmark/score.ts"
   },

@@ -1,4 +1,5 @@
 import { recognise } from './ocr';
+import { planScale } from './scale';
 import { runDetectors, type Finding } from './detectors/types';
 import { emailDetector, phoneDetector, tokenDetector } from './detectors/contact';
 import { networkDetector } from './detectors/network';
@@ -51,12 +52,15 @@ async function handle(f: File) {
   download.disabled = true;
   status.textContent = 'Reading text in your browserâ€¦';
   try {
-    bitmap = await createImageBitmap(f);
+    const bm = await createImageBitmap(f);
+    const plan = planScale(bm.width, bm.height);
+    if (!plan.ok) { bm.close(); status.textContent = plan.message; return; }
+    bitmap = bm;
     view.width = bitmap.width;
     view.height = bitmap.height;
     view.getContext('2d')!.drawImage(bitmap, 0, 0);
     view.hidden = false;
-    review = createReview(runDetectors(await recognise(f), [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector]));
+    review = createReview(runDetectors(await recognise(f, { langs: ['eng'], onProgress: (p) => { status.textContent = `Reading text in your browser… ${Math.round(p * 100)}%`; } }), [emailDetector, phoneDetector, tokenDetector, networkDetector, layoutDetector]));
     render();
     download.disabled = false;
     undoBtn.disabled = false;

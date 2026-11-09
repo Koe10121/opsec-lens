@@ -14,3 +14,8 @@ huge images with a clear message.
 - UI shows progress while OCR runs.
 - A very large image gives a clear message rather than freezing the page.
 - `npm test` and `npm run typecheck` pass.
+
+## Done notes
+- Timing (`npm run time-ocr`, Node, synthetic): 1920x1080 = 2.1s, 960x540 = 0.6s. Under the 10s threshold, so
+  1080p is not downscaled; images above 2.5 MP are downscaled before OCR and boxes mapped back (`src/scale.ts`).
+- Images above 100 MP get a clear "too large" message; OCR progress % shown in the status line.
