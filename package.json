@@ -8,13 +8,16 @@
     "build": "vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "make-sample": "node scripts/make-sample.mjs"
+    "make-sample": "node scripts/make-sample.mjs",
+    "benchmark:generate": "python benchmark/generate --seed 1 --n 20",
+    "benchmark:score": "tsx benchmark/score.ts"
   },
   "dependencies": {
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^1.1.0",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"

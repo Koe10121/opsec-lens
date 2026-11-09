@@ -2,7 +2,7 @@ import { createWorker } from 'tesseract.js';
 import type { Word } from './detectors/types';
 
 /** OCR runs in the browser. Only the engine's own language data is fetched; the image never is sent. */
-export async function recognise(image: Blob, opts: { langs: string[] } = { langs: ['eng'] }): Promise<Word[]> {
+export async function recognise(image: Blob | Uint8Array, opts: { langs: string[] } = { langs: ['eng'] }): Promise<Word[]> {
   const worker = await createWorker(opts.langs.join('+'));
   try {
     const { data } = await worker.recognize(image, {}, { blocks: true });
