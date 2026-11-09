@@ -2,7 +2,7 @@ import { recognise } from './ocr';
 import { runDetectors, type Finding } from './detectors/types';
 import { emailDetector, phoneDetector, tokenDetector } from './detectors/contact';
 import { networkDetector } from './detectors/network';
-import { apply } from './redact';
+import { apply, STYLES, type Style } from './redact';
 import { createReview } from './review/review';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -14,6 +14,8 @@ const download = $<HTMLButtonElement>('download');
 const undoBtn = $<HTMLButtonElement>('undo');
 const redoBtn = $<HTMLButtonElement>('redo');
 const list = $('findings');
+const styleSel = $<HTMLSelectElement>('style');
+for (const s of STYLES) styleSel.add(new Option(s, s));
 
 let bitmap: ImageBitmap | null = null;
 let review = createReview([]);
@@ -74,7 +76,7 @@ drop.addEventListener('drop', (e) => {
 });
 download.addEventListener('click', async () => {
   if (!bitmap) return;
-  const blob = await apply(bitmap, review.accepted(), 'solid');
+  const blob = await apply(bitmap, review.accepted(), styleSel.value as Style);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'redacted.png';

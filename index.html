@@ -19,10 +19,12 @@
 <body>
   <h1>OpSec Lens</h1>
   <p>Images never leave your browser. Detection is not a guarantee: review before sharing.</p>
+  <p>The download is re-encoded from the canvas, which strips EXIF metadata (location, camera, etc.).</p>
   <div id="drop" tabindex="0">Drop a PNG here or <input id="file" type="file" accept="image/png" /></div>
   <div id="status" role="status"></div>
   <button id="undo" disabled>Undo</button>
   <button id="redo" disabled>Redo</button>
+  <label>Style <select id="style"></select></label>
   <button id="download" disabled>Download redacted PNG</button>
   <div id="review">
     <canvas id="view" hidden></canvas>
